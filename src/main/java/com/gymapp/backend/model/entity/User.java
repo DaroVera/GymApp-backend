@@ -28,6 +28,9 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
+    @Column(nullable = false, unique = true) // No puede ser null y NO se puede repetir
+    private String email;
+
     @Column(nullable = false, unique = true)
     private String password;
 
