@@ -3,6 +3,7 @@ package com.gymapp.backend.service;
 import com.gymapp.backend.model.dto.AuthResponse;
 import com.gymapp.backend.model.dto.LoginRequest;
 import com.gymapp.backend.model.dto.UserRegisterDTO;
+import com.gymapp.backend.model.dto.UserResponseDTO; // Importamos el DTO de Usuario
 import com.gymapp.backend.model.entity.User;
 import com.gymapp.backend.model.enums.Role;
 import com.gymapp.backend.repository.UserRepository;
@@ -13,7 +14,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
@@ -23,14 +23,14 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    // REGISTRO (Devuelve Token directo)
+    // REGISTRO
     public AuthResponse register(UserRegisterDTO request) {
         var user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword())) // ¡Encriptamos la password!
-                .role(Role.USER) // Por defecto todos son USER
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.USER)
                 .build();
 
         userRepository.save(user);
@@ -39,13 +39,12 @@ public class AuthenticationService {
 
         return AuthResponse.builder()
                 .token(jwtToken)
+                .user(mapToUserDto(user)) // <--- Agregamos los datos del usuario
                 .build();
     }
 
     // LOGIN
     public AuthResponse login(LoginRequest request) {
-        // 1. Este método hace el trabajo sucio: verifica usuario y contraseña.
-        // Si falla, lanza una excepción automáticamente.
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -53,7 +52,6 @@ public class AuthenticationService {
                 )
         );
 
-        // 2. Si llegamos aquí, las credenciales son correctas. Buscamos al usuario para generar el token.
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
 
@@ -61,6 +59,19 @@ public class AuthenticationService {
 
         return AuthResponse.builder()
                 .token(jwtToken)
+                .user(mapToUserDto(user)) // <--- Agregamos los datos del usuario
+                .build();
+    }
+
+    // Método auxiliar para convertir Entidad -> DTO
+    // Esto evita repetir código y mantiene limpio el servicio
+    private UserResponseDTO mapToUserDto(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().name()) // Convertimos el Enum a String
                 .build();
     }
 }
