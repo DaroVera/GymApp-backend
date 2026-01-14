@@ -31,6 +31,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         //.requestMatchers("/api/users/**").permitAll() // Descomenta si usas esta ruta temporalmente
 
+                        // Rutas SOLO para ADMIN (Nueva Regla)
+                        // Spring asume el prefijo "ROLE_", así que si en la BD es "ADMIN", aquí ponemos "ADMIN"
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+
+                        //  Zona TRAINER (Pueden entrar TRAINERS y ADMINS)
+                        .requestMatchers("/api/trainer/**").hasAnyAuthority("TRAINER", "ADMIN")
+
                         // Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
