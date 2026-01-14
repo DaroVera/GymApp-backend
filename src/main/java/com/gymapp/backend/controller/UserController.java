@@ -1,5 +1,6 @@
 package com.gymapp.backend.controller;
 
+import com.gymapp.backend.model.dto.ChangePasswordDTO;
 import com.gymapp.backend.model.dto.UserResponseDTO;
 import com.gymapp.backend.model.dto.UserUpdateDTO;
 import com.gymapp.backend.service.UserService;
@@ -28,5 +29,16 @@ public class UserController {
     @PutMapping("/me")
     public ResponseEntity<UserResponseDTO> updateProfile(@Valid @RequestBody UserUpdateDTO request) {
         return ResponseEntity.ok(userService.updateUserProfile(request));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordDTO request) {
+        try {
+            userService.changePassword(request);
+            return ResponseEntity.ok().build(); // 200 OK sin cuerpo
+        } catch (IllegalStateException e) {
+            // Si la contraseña actual está mal, devolvemos 400 Bad Request
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.gymapp.backend.service.UserServiceImpl;
 
+import com.gymapp.backend.model.dto.ChangePasswordDTO;
 import com.gymapp.backend.model.dto.UserRegisterDTO;
 import com.gymapp.backend.model.dto.UserResponseDTO;
 import com.gymapp.backend.model.dto.UserUpdateDTO;
@@ -10,6 +11,7 @@ import com.gymapp.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder; // <--- INYECCIÓN NUEVA
 
     @Override
     public UserResponseDTO getUserProfile() {
@@ -72,6 +76,30 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .build();
+    }
+
+    @Override
+    public void changePassword(ChangePasswordDTO request) {
+        // 1. Obtener usuario autenticado
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // 2. VERIFICACIÓN: ¿La contraseña actual coincide con la de la BD?
+        // passwordEncoder.matches(textoPlano, hashEncriptado)
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalStateException("La contraseña actual es incorrecta");
+        }
+
+        // 3. Validar que la nueva no sea igual a la vieja (Opcional, pero buena práctica)
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new IllegalStateException("La nueva contraseña debe ser diferente a la actual");
+        }
+
+        // 4. Encriptar la nueva contraseña y guardarla
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(user);
     }
 
 }
