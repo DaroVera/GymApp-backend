@@ -38,6 +38,8 @@ public class SecurityConfig {
                         //  Zona TRAINER (Pueden entrar TRAINERS y ADMINS)
                         .requestMatchers("/api/trainer/**").hasAnyAuthority("TRAINER", "ADMIN")
 
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
                         // Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
