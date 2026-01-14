@@ -1,7 +1,9 @@
 package com.gymapp.backend.controller;
 
 import com.gymapp.backend.model.dto.UserResponseDTO;
+import com.gymapp.backend.model.dto.UserUpdateDTO;
 import com.gymapp.backend.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,5 +23,10 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> myProfile() {
         return ResponseEntity.ok(userService.getUserProfile());
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserResponseDTO> updateProfile(@Valid @RequestBody UserUpdateDTO request) {
+        return ResponseEntity.ok(userService.updateUserProfile(request));
     }
 }
