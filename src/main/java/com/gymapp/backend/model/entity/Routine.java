@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -46,4 +47,9 @@ public class Routine {
     protected void onCreate(){
         createdDate = LocalDateTime.now();
     }
+
+    // RELACIÓN BIDIRECCIONAL
+    // "mappedBy" le dice a Hibernate: "La dueña de la relación es la variable 'routine' en la clase RoutineExercise"
+    @OneToMany(mappedBy = "routine", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoutineExercise> routineExercises;
 }
