@@ -9,6 +9,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,10 +21,12 @@ public class ExerciseController {
 
     @GetMapping
     public ResponseEntity<Page<ExerciseResponseDTO>> getAllExercises(
-            // Si el frontend no manda nada, mostramos pagina 0, 10 items, ordenado por nombre
-            @PageableDefault(size = 10, page = 0, sort = "name") Pageable pageable
+            @PageableDefault(size = 10, page = 0, sort = "name") Pageable pageable,
+            // required = false significa que es opcional
+            @RequestParam(required = false) String muscle
     ) {
-        Page<ExerciseResponseDTO> result = exerciseService.getAllExercises(pageable);
+        // Pasamos el filtro al servicio
+        Page<ExerciseResponseDTO> result = exerciseService.getAllExercises(pageable, muscle);
         return ResponseEntity.ok(result);
     }
 }
