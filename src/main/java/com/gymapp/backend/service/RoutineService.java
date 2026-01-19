@@ -1,5 +1,6 @@
 package com.gymapp.backend.service;
 
+import com.gymapp.backend.exception.ResourceNotFoundException; // <--- 1. IMPORTAR ESTO
 import com.gymapp.backend.model.dto.RoutineCreateDTO;
 import com.gymapp.backend.model.entity.Exercise;
 import com.gymapp.backend.model.entity.Routine;
@@ -22,32 +23,32 @@ public class RoutineService {
 
     private final RoutineRepository routineRepository;
     private final ExerciseRepository exerciseRepository;
-    private final UserRepository userRepository; // Para buscar al usuario actual
+    private final UserRepository userRepository;
 
-
-    @Transactional // ⚠️ CLAVE: Si algo falla, se hace rollback de todo
+    @Transactional
     public Routine createRoutine(RoutineCreateDTO request) {
-        // 1. Obtener usuario autenticado (del Token)
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 2. Crear la entidad Routine (Cabecera)
+        // CAMBIO 1: Usar excepción personalizada para el Usuario
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado")); // <--- CAMBIO AQUÍ
+
         Routine routine = Routine.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .difficultyLevel(DifficultyLevel.valueOf(request.getDifficultyLevel().toUpperCase()))
                 .user(user)
-                .routineExercises(new ArrayList<>()) // Inicializamos la lista vacía
+                .routineExercises(new ArrayList<>())
                 .build();
 
-        // 3. Iterar sobre los ejercicios solicitados y crearlos
         request.getExercises().forEach(exDto -> {
+
+            // CAMBIO 2: Usar excepción personalizada para el Ejercicio
             Exercise exercise = exerciseRepository.findById(exDto.getExerciseId())
-                    .orElseThrow(() -> new RuntimeException("Ejercicio no encontrado ID: " + exDto.getExerciseId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Ejercicio no encontrado ID: " + exDto.getExerciseId())); // <--- CAMBIO AQUÍ
 
             RoutineExercise routineExercise = RoutineExercise.builder()
-                    .routine(routine) // Enlazamos con la rutina padre
+                    .routine(routine)
                     .exercise(exercise)
                     .sets(exDto.getSets())
                     .repetitions(exDto.getReps())
@@ -55,11 +56,9 @@ public class RoutineService {
                     .restTime(exDto.getRestTime())
                     .build();
 
-            // Agregamos a la lista de la rutina
             routine.getRoutineExercises().add(routineExercise);
         });
 
-        // 4. Guardar (Gracias al CascadeType.ALL, guarda Rutina Y sus Ejercicios)
         return routineRepository.save(routine);
     }
 }
