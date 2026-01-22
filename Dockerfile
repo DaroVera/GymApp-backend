@@ -1,28 +1,26 @@
 # --- ETAPA 1: CONSTRUCCIÓN (BUILD) ---
-# Usamos una imagen que tiene Maven y Java instalado
+# Usamos una imagen que tiene Maven y Java instalados para compilar
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 
-# Establecemos el directorio de trabajo
+# Establecemos el directorio de trabajo dentro de Linux
 WORKDIR /app
 
-# Copiamos el pom.xml y el código fuente
+# Copiamos primero el archivo de dependencias (para aprovechar la caché de Docker)
 COPY pom.xml .
 COPY src ./src
 
-# Ejecutamos el empaquetado (igual que hacías en tu PC)
-# -DskipTests para ahorrar tiempo en el despliegue
+# Ejecutamos el comando de Maven para crear el .jar (saltando tests para ir rápido)
 RUN mvn clean package -DskipTests
 
 # --- ETAPA 2: EJECUCIÓN (RUN) ---
-# Usamos la imagen ligera solo con Java (igual que antes)
+# Ahora usamos una imagen limpia y ligera solo con Java
 FROM eclipse-temurin:21-jdk-alpine
 
-# Creamos el volumen temporal
+# Creamos un volumen temporal
 VOLUME /tmp
 
-# AQUÍ ESTÁ LA MAGIA: Copiamos el .jar generado en la ETAPA 1 (build)
-# hacia esta nueva etapa limpia.
+# ¡AQUÍ ESTÁ EL TRUCO!: Copiamos el .jar generado en la ETAPA 1 hacia esta etapa final
 COPY --from=build /app/target/*.jar app.jar
 
-# Ejecutamos la app
+# Ejecutamos la aplicación
 ENTRYPOINT ["java","-jar","/app.jar"]
