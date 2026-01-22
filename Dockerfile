@@ -1,13 +1,28 @@
+# --- ETAPA 1: CONSTRUCCIÓN (BUILD) ---
+# Usamos una imagen que tiene Maven y Java instalado
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 
-# 1. IMAGEN BASE: Usamos una versión ligera de Linux (Alpine) que ya tiene Java 21 instalado
+# Establecemos el directorio de trabajo
+WORKDIR /app
+
+# Copiamos el pom.xml y el código fuente
+COPY pom.xml .
+COPY src ./src
+
+# Ejecutamos el empaquetado (igual que hacías en tu PC)
+# -DskipTests para ahorrar tiempo en el despliegue
+RUN mvn clean package -DskipTests
+
+# --- ETAPA 2: EJECUCIÓN (RUN) ---
+# Usamos la imagen ligera solo con Java (igual que antes)
 FROM eclipse-temurin:21-jdk-alpine
 
-# 2. VOLUMEN: Creamos un punto de montaje temporal (opcional, pero buena práctica en Spring Boot)
+# Creamos el volumen temporal
 VOLUME /tmp
 
-# 3. COPIAR: Agarramos el .jar que creaste en target y lo metemos en la imagen con nombre "app.jar"
-# Asegúrate de que el asterisco (*) coincida con tu archivo generado
-COPY target/*.jar app.jar
+# AQUÍ ESTÁ LA MAGIA: Copiamos el .jar generado en la ETAPA 1 (build)
+# hacia esta nueva etapa limpia.
+COPY --from=build /app/target/*.jar app.jar
 
-# 4. PUNTO DE ENTRADA: El comando que se ejecutará cuando arranque el contenedor
+# Ejecutamos la app
 ENTRYPOINT ["java","-jar","/app.jar"]
