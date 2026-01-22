@@ -1,0 +1,32 @@
+services:
+  # 1. SERVICIO DE BASE DE DATOS
+  mysqldb:
+    image: mysql:8.0
+    container_name: gymapp-mysql-container
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=gymapp
+    ports:
+      - "3307:3306" # Mapeamos al puerto 3307 de tu PC para no chocar con tu MySQL local
+    volumes:
+      - mysql-data:/var/lib/mysql # Esto hace que los datos persistan aunque apagues docker
+
+  # 2. SERVICIO DE TU BACKEND
+  backend:
+    image: gymapp-backend:v1 # Usamos la imagen que acabas de crear
+    container_name: gymapp-backend-container
+    restart: on-failure
+    ports:
+      - "8080:8080" # El puerto 8080 del contenedor sale al 8080 de tu PC
+    environment:
+      # Sobreescribimos la config de application.properties para que apunte al contenedor 'mysqldb'
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/gymapp
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      # Forzamos que Hibernate cree las tablas de nuevo en esta DB nueva
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - mysqldb # Espera a que la DB arranque antes de iniciar la App
+
+volumes:
+  mysql-data:
